@@ -49,7 +49,6 @@ export class IcyRequest extends EventEmitter {
                 if (this.metaInt) {
                     const metaInt = this.metaInt;
                     while (data.length > metaInt) {
-                        //const byte = Uint8Array.from(data.slice(metaInt, metaInt + 1))[0]
                         const byte = data.readUInt8(metaInt)
                         const metaSize = byte * 16 + 1;
                         if (data.length >= metaInt + metaSize) {
@@ -75,8 +74,7 @@ export class IcyRequest extends EventEmitter {
             this.emit('end');
         });
         socket.on('error', (error) => {
-            console.log('error', error);
-            this.emit('error', error);
+            this.emit('error', error.toString);
         });
     }
     parseMeta(buffer) {
