@@ -8,7 +8,7 @@ export class IcyRequest extends EventEmitter {
         this.url = new URL(url);
     }
     async send(options = {}) {
-        options = { ...{ method: 'GET', timeout: 2000, redirect: true }, ...options };
+        options = { ...{ method: 'GET', timeout: 2000, redirect: true, version: '1.1' }, ...options };
         const url = this.url;
         let socket;
         if (url.protocol == 'https:') {
@@ -25,7 +25,7 @@ export class IcyRequest extends EventEmitter {
         }, options.timeout);
         socket.on('connect', () => {
             clearTimeout(timeout);
-            socket.write(`${options.method} ${url.pathname}${url.search} HTTP/1.0\r\nHost: ${url.hostname}\r\nUser-Agent: Casty\r\nIcy-MetaData: 1\r\n\r\n`);
+            socket.write(`${options.method} ${url.pathname}${url.search} HTTP/${options.version}\r\nHost: ${url.hostname}\r\nUser-Agent: Casty\r\nIcy-MetaData: 1\r\n\r\n`);
         });
         let data = new Buffer.alloc(0);
         socket.on('data', (d) => {
@@ -38,7 +38,7 @@ export class IcyRequest extends EventEmitter {
                     const raw = h.toString('utf8');
                     const response = this.response = this.parseResponse(raw);
                     const headers = response.headers;
-                    if (options.redirect && Math.floor(response.status / 100) == 3 && headers.location) {
+                    if (options.redirect && Math.floor(response.status.code / 100) == 3 && headers.location) {
                         const redirected = [...this.redirected || [], this.url.toString()];
                         const req = new IcyRequest(headers.location, this.options);
                         if (redirected.includes(req.url.toString())) {
@@ -58,7 +58,7 @@ export class IcyRequest extends EventEmitter {
                     this.metaInt = parseInt(headers['icy-metaint']) || 0;
                     if (!this.metaInt && data.length) {
                         this.emit('data', data);
-                        data = undefined;
+                        data = Buffer.alloc(0);
                     }
                 }
             } else {
@@ -90,7 +90,7 @@ export class IcyRequest extends EventEmitter {
             this.emit('end');
         });
         socket.on('error', (error) => {
-            this.emit('error', error.toString);
+            this.emit('error', error.toString());
         });
     }
     parseMeta(buffer) {
@@ -113,8 +113,7 @@ export class IcyRequest extends EventEmitter {
         const response = { headers: {} };
         const hh = text.split('\r\n');
         const r = hh[0].split(' ');
-        if (r.length != 3) throw `invalid reponse ${hh[0]}`;    // 4debug
-        response.status = parseInt(r[1]);
+        response.status = { code: parseInt(r[1]), message: r.slice(2).join(' ') };
         for (const h of hh.slice(1)) {
             if (h.length) {
                 const p = h.split(':');
@@ -124,7 +123,7 @@ export class IcyRequest extends EventEmitter {
         return response;
     }
     destroy() {
-        if(this.redirection) {
+        if (this.redirection) {
             this.redirection.destroy();
         }
         this.socket.destroy();
