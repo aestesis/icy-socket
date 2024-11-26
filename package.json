@@ -2,10 +2,11 @@
     "name": "icy-socket",
     "version": "1.0.0",
     "description": "icy-socket",
-    "main": "index.js",
+    "repository": "github:aestesis/icy-socket",
+    "main": "request.mjs",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
     },
-    "author": "renan",
+    "author": "renan jegouzo",
     "license": "ISC"
 }
