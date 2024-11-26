@@ -97,7 +97,7 @@ export class IcyRequest extends EventEmitter {
         const response = { headers: {} };
         const hh = text.split('\r\n');
         const r = hh[0].split(' ');
-        if (r.length != 3) throw 'invalid reponse';
+        if (r.length != 3) throw `invalid reponse ${hh[0]}`;
         response.status = parseInt(r[1]);
         for (const h of hh.slice(1)) {
             if (h.length) {
