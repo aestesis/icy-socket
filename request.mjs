@@ -91,6 +91,7 @@ export class IcyRequest extends EventEmitter {
             this.emit('end');
         });
         socket.on('error', (error) => {
+            clearTimeout(timeout);
             this.emit('error', error.toString());
         });
     }
