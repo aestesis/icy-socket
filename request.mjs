@@ -41,7 +41,7 @@ export class IcyRequest extends EventEmitter {
                     const headers = response.headers;
                     if (options.redirect && Math.floor(response.status.code / 100) == 3 && headers.location) {
                         const redirected = [...this.redirected || [], this.url.toString()];
-                        const req = new IcyRequest(headers.location, this.options);
+                        const req = new IcyRequest(headers.location);
                         if (redirected.includes(req.url.toString())) {
                             this.emit('error', 'infinite redirection');
                             return;
@@ -52,7 +52,7 @@ export class IcyRequest extends EventEmitter {
                         req.on('meta', (e) => this.emit('meta', e));
                         req.on('data', (e) => this.emit('data', e));
                         this.redirection = req;
-                        req.send();
+                        req.send(options);
                         return;
                     }
                     this.emit('response', response);
