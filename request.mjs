@@ -2,13 +2,14 @@ import net from 'node:net';
 import { EventEmitter } from 'node:events';
 import tls from 'node:tls';
 
+
 export class IcyRequest extends EventEmitter {
     constructor(url) {
         super();
         this.url = new URL(url);
     }
     async send(options = {}) {
-        options = { ...{ method: 'GET', timeout: 2000, redirect: true, version: '1.1' }, ...options };
+        options = { ...{ method: 'GET', timeout: 2000, redirect: true, version: '1.1', rawStream: false }, ...options };
         const url = this.url;
         let socket;
         if (url.protocol == 'https:') {
@@ -32,7 +33,7 @@ export class IcyRequest extends EventEmitter {
             data = Buffer.concat([data, d]);
             if (!this.response) {
                 const index = data.indexOf('\r\n\r\n');
-                if (index>=0) {
+                if (index >= 0) {
                     const h = data.slice(0, index + 4);
                     data = data.slice(index + 4);
                     const raw = h.toString('utf8');
@@ -55,7 +56,7 @@ export class IcyRequest extends EventEmitter {
                         return;
                     }
                     this.emit('response', response);
-                    this.metaInt = parseInt(headers['icy-metaint']) || 0;
+                    this.metaInt = options.rawStream ? 0 : parseInt(headers['icy-metaint']) || 0;
                     if (!this.metaInt && data.length) {
                         this.emit('data', data);
                         data = Buffer.alloc(0);
