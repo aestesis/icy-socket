@@ -2,14 +2,25 @@ import net from 'node:net';
 import { EventEmitter } from 'node:events';
 import tls from 'node:tls';
 
+const State = Object.freeze({
+    none: Symbol('none'),
+    buffering: Symbol('buffering'),
+    buffered: Symbol('buffered')
+});
 
 export class IcyRequest extends EventEmitter {
-    constructor(url) {
+    constructor(url, options = {}) {
         super();
         this.url = new URL(url);
+        this.options = options;
+        this.state = State.none;
     }
     async send(options = {}) {
-        options = { ...{ method: 'GET', timeout: 2000, redirect: true, version: '1.1', rawStream: false }, ...options };
+        options = {
+            ...{ method: 'GET', timeout: 2000, redirect: true, version: '1.1', rawStream: false },
+            ...this.options,
+            ...options
+        };
         const url = this.url;
         let socket;
         if (url.protocol == 'https:') {
@@ -57,13 +68,19 @@ export class IcyRequest extends EventEmitter {
                     }
                     this.emit('response', response);
                     this.metaInt = options.rawStream ? 0 : parseInt(headers['icy-metaint']) || 0;
-                    if (!this.metaInt && data.length) {
+                    if (options.rawStream) {
+                        this.state = State.buffering;
+                    } else if (!this.metaInt && data.length) {
                         this.emit('data', data);
                         data = Buffer.alloc(0);
                     }
                 }
             } else {
-                if (this.metaInt) {
+                if (this.state == State.buffering) {
+                    if (data.length > 100000) {
+                        this.state = State.buffered;
+                    }
+                } else if (this.metaInt) {
                     const metaInt = this.metaInt;
                     while (data.length > metaInt) {
                         const byte = data.readUInt8(metaInt)
