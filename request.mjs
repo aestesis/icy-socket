@@ -32,7 +32,7 @@ export class IcyRequest extends EventEmitter {
             data = Buffer.concat([data, d]);
             if (!this.response) {
                 const index = data.indexOf('\r\n\r\n');
-                if (index) {
+                if (index>=0) {
                     const h = data.slice(0, index + 4);
                     data = data.slice(index + 4);
                     const raw = h.toString('utf8');
