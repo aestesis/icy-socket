@@ -45,7 +45,8 @@ export class IcyRequest extends EventEmitter {
                     const headers = response.headers;
                     if (options.redirect && Math.floor(response.status.code / 100) == 3 && headers.location) {
                         const redirected = [...this.redirected || [], this.url.toString()];
-                        const req = new IcyRequest(headers.location);
+                        const nurl = new URL(headers.location, this.url);
+                        const req = new IcyRequest(nurl);
                         if (redirected.includes(req.url.toString())) {
                             this.emit('error', 'infinite redirection');
                             return;
